@@ -1,0 +1,196 @@
+import pygame, sys, random
+
+
+def ball_animation():
+    global ball_speed_x, ball_speed_y, player_score, opponent_score, score_time
+    ball.x += ball_speed_x
+    ball.y += ball_speed_y
+
+    if ball.top <= 0 or ball.bottom >= screen_height:
+        pygame.mixer.Sound.play(pong_sound)
+        ball_speed_y *= -1
+ #player score
+    if ball.left <= 0:
+        pygame.mixer.Sound.play(score_sound)
+        player_score +=1
+        score_time = pygame.time.get_ticks()
+    #opponent score
+    if ball.right >= screen_width:
+        pygame.mixer.Sound.play(score_sound)
+        opponent_score +=1
+        score_time = pygame.time.get_ticks()
+
+    if ball.colliderect(player) and ball_speed_x > 0:
+        pygame.mixer.Sound.play(pong_sound)
+        if abs(ball.right - player.left) < 10:
+            ball_speed_x *= -1
+        elif abs(ball.bottom - player.top) < 10 and ball_speed_y > 0:
+            ball_speed_y *= -1
+
+        elif abs(ball.top - player.top) < 10 and ball_speed_y > 0:
+            ball_speed_y *= -1
+
+    if ball.colliderect(opponent) and ball_speed_x < 0:
+        pygame.mixer.Sound.play(pong_sound)
+        if abs(ball.left - opponent.right) < 10:
+            ball_speed_x *= -1
+        elif abs(ball.bottom - opponent.top) < 10 and ball_speed_y > 0:
+            ball_speed_y *= -1
+
+        elif abs(ball.top - opponent.top) < 10 and ball_speed_y > 0:
+            ball_speed_y *= -1
+
+
+
+
+def player_animation():
+    player.y += player_speed
+    if player.top <= 0:
+        player.top = 0
+
+    if player.bottom >= screen_height:
+        player.bottom = screen_height
+def opponent_ai():
+    if opponent.top <= ball.y:
+        opponent.top += opponent_speed
+
+    if opponent.bottom >= ball.y:
+        opponent.bottom -= opponent_speed
+    if opponent.top <= 0:
+        opponent.top = 0
+
+    if opponent.bottom >= screen_height:
+        opponent.bottom = screen_height
+def ball_restart():
+    global ball_speed_x, ball_speed_y, score_time
+
+    current_time = pygame.time.get_ticks()
+    ball.center = (screen_width / 2, screen_height / 2)
+
+    if current_time - score_time < 700:
+        number_three = game_font.render("3", False, light_gray)
+        screen.blit(number_three,(screen_width/2 - 10, screen_height/2 + 20))
+
+    if 700 < current_time - score_time < 1400:
+        number_two = game_font.render("2", False, light_gray)
+        screen.blit(number_two,(screen_width/2 - 10, screen_height/2 + 20))
+
+    if 1400 < current_time - score_time < 2100:
+        number_one = game_font.render("1", False, light_gray)
+        screen.blit(number_one,(screen_width/2 - 10, screen_height/2 + 20))
+
+
+    if current_time - score_time < 2100:
+        ball_speed_x, ball_speed_y = 0,0
+
+    else:
+        ball_speed_y = 7 * random.choice((1, -1))
+        ball_speed_x = 7 * random.choice((1, -1))
+        score_time = None
+
+
+
+    ball_speed_y *= random.choice((1,-1))
+    ball_speed_x *= random.choice((1, -1))
+
+
+
+# general setup
+pygame.mixer.pre_init(44100,-16,2, 512)
+pygame.init()  # iniciranje pygame modula, to se mora napraviti svaki put
+clock = pygame.time.Clock()
+
+# Settingup the main window
+
+screen_width = 1280
+screen_height = 960
+
+# vraća ekran koji se nalazi u screen varijabli, sve se tu prikazuje, moze biti samo jedan
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("za_melisu")  # naziv ekrana
+
+# game rectangles, prvo ga stavljamo usredinu, a dalje su dimenzije
+ball = pygame.Rect(screen_width / 2 - 15, screen_height / 2 - 15, 30,
+                   30)  # width, hight, koordinate pocinju u gornjem lijevom uglu
+
+player = pygame.Rect(screen_width - 20, screen_height / 2 - 70, 10, 140)
+
+opponent = pygame.Rect(10, screen_height / 2 - 70, 10, 140)
+
+bg_color = pygame.Color('gray12')
+light_gray = (200, 200, 200)
+naziv_igre_boja = pygame.Color("blue")
+# brzina lopte, horizontalna i verikalna
+ball_speed_x = 7 * random.choice((1,-1))
+ball_speed_y = 7 * random.choice((1,-1))
+player_speed = 0
+opponent_speed = 7
+
+#text variable
+player_score = 0
+opponent_score = 0
+
+naziv_igre = "MELISIN PIN-PONG"
+game_font = pygame.font.Font("freesansbold.ttf", 32)
+naziv_igre_font = pygame.font.Font("freesansbold.ttf", 32)
+
+#Score Timer
+score_time = True
+
+#Zvuk
+pong_sound = pygame.mixer.Sound("pong_1.ogg")
+score_sound = pygame.mixer.Sound("score_1.ogg")
+while True:
+    # handling input
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:  # ako stisne X za zatvaranje
+            pygame.quit()  # za zaustavljanje igre
+            sys.exit()  # za zaustavljanje igre
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DOWN:
+                player_speed += 7
+            if event.key == pygame.K_UP:
+                player_speed -= 7
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_DOWN:
+                player_speed -= 7
+            if event.key == pygame.K_UP:
+                player_speed += 7
+
+    ball_animation()
+    player_animation()
+    opponent_ai()
+
+    # Visuals, crtanje, vazan je redosljed koda, prvo pozadina pozadina, zadnje linija koja razdvaja teren
+    screen.fill(bg_color)  # pozadina
+    # crtanje pravokutnika
+    pygame.draw.rect(screen, light_gray, player)
+    pygame.draw.rect(screen, light_gray, opponent)
+    # crtanje lopte
+    pygame.draw.ellipse(screen, light_gray, ball)
+    pygame.draw.aaline(screen, light_gray, (screen_width / 2, 0), (screen_width / 2, screen_height))
+
+    if score_time:
+        ball_restart()
+
+
+    #tekst
+    player_text = game_font.render(f"{player_score}", False, light_gray)  #stvaranje površine na kojoj će se prikazati tekst
+    screen.blit(player_text, (660, 470))  #stavljanje površine na glavnu površinu
+
+    opponent_text = game_font.render(f"{opponent_score}", False, light_gray)
+    screen.blit(opponent_text, (600, 470))
+
+    naziv_igre_text = naziv_igre_font.render(f"{naziv_igre}", False, naziv_igre_boja)
+    screen.blit(naziv_igre_text, (500, 0))
+
+
+
+
+
+
+    # updating the window
+    pygame.display.flip()  # stvara sliku od svega prije napisanog
+    clock.tick(60)  # broj osvježavanja ekrana u sekundi
